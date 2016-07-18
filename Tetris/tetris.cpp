@@ -10,6 +10,9 @@
 
 using namespace std;
 
+/*
+ * 2D bool vector for the board
+ */
 static vector<vector<bool>> board(board_height,vector<bool>(board_width,false));
 
 static bool to_update = false;
@@ -204,7 +207,50 @@ static char shapes[7 /*type*/][4 /*orientation*/][5 /*rows*/][5 /*columns*/] {
   }
 };
 
-// Intialize variables globally so they aren't recalculated and reallocated on each loop iteration
+/*
+* Type:
+* 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
+*/
+int shapeOffsets[7 /* type */][4 /* orientation */][2 /* translation */] {
+  { // Square
+    {-2,-3},
+    {-2,-3},
+    {-2,-3},
+    {-2,-3}
+  },{ // Line
+    {-2,-2},
+    {-2,-3},
+    {-2,-2},
+    {-2,-3}
+  },{ // L-Shape
+    {-2,-3},
+    {-2,-3},
+    {-2,-2},
+    {-2,-3}
+  },{ // Reverse-L
+    {-2,-3},
+    {-2,-2},
+    {-2,-3},
+    {-2,-3}
+  },{ // Z-Shape
+    {-2,-3},
+    {-2,-3},
+    {-2,-3},
+    {-2,-2}
+  },{ // S-Shape
+    {-2,-3},
+    {-2,-3},
+    {-2,-3},
+    {-2,-2}
+  },{ // T-Shape
+    {-2,-3},
+    {-2,-3},
+    {-2,-3},
+    {-2,-2}
+  }
+};
+
+// Intialize variables globally since they are always reused
 int i,j;
 int board_w2 = board_width * 2;
 int d_width = (board_width+2)*2;
@@ -243,7 +289,7 @@ void update() {
 
 int main(int argc, char** argv) {
 
-  // start tetris loop
+  // Start tetris loop
   display_callback();
   while(1) {
     update();
