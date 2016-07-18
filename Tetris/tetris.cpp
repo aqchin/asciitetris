@@ -20,6 +20,9 @@ static bool to_update = false;
 /*
  * Type:
  * 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
+ * 
+ * Orientation:
+ * 0=0deg, 1=90deg, 2=180deg, 3=270deg
  */
 static char shapes[7 /*type*/][4 /*orientation*/][5 /*rows*/][5 /*columns*/] {
   { // Square
@@ -250,6 +253,12 @@ int shapeOffsets[7 /* type */][4 /* orientation */][2 /* translation */] {
   }
 };
 
+struct Shape {
+  int type;
+  int orientation;
+  int x, y;
+};
+
 // Intialize variables globally since they are always reused
 int i,j;
 int board_w2 = board_width * 2;
@@ -284,6 +293,21 @@ void update() {
   if(to_update) {
     display_callback();
     to_update = false;
+  }
+}
+
+bool isGameOver() {
+  for(int i=0; i<board_width; i++)
+    if(board[0][i]) return true;
+
+  return false;
+}
+
+void deleteRow(int r) {
+  for(int i=r; i>0; i--) {
+    for(int j=0; j<board_width; j++) {
+      board[i][j] = board[i-1][j];
+    }
   }
 }
 
