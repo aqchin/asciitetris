@@ -202,7 +202,7 @@ static char shapes[7 /*type*/][4 /*orientation*/][5 /*rows*/][5 /*columns*/] {
       {0,0,0,0,0}
     }
   }
-}
+};
 
 // Intialize variables globally so they aren't recalculated and reallocated on each loop iteration
 int i,j;
