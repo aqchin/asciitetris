@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <string>
@@ -309,6 +310,22 @@ void deleteRow(int r) {
       board[i][j] = board[i-1][j];
     }
   }
+}
+
+// Could make this more efficient
+void deleteFilledRows() {
+  for(int r=0; r<board_height; r++) {
+    int c=0;
+    while(c<board_width) {
+      if(board[r][c]==1) break;
+      c++;
+    }
+    if(c==board_width) deleteRow(r);
+  }
+}
+
+bool isBlockFree(int x, int y) {
+  return (board[x][y]==0);
 }
 
 int main(int argc, char** argv) {
