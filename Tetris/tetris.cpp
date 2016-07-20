@@ -4,10 +4,11 @@
 #include <string>
 #include <vector>
 
-#define board_height 20
-#define board_width 10
-#define x_offset 8
-#define y_offset 2
+#define board_height 20       // Height of the board
+#define board_width 10        // Width of the board
+#define shape_blocks 5        // NxN of each shape
+#define x_offset 8            // Y offset of the game in the console
+#define y_offset 2            // X offset of the game in the console
 
 using namespace std;
 
@@ -260,41 +261,16 @@ struct Shape {
   int x, y;
 };
 
-// Intialize variables globally since they are always reused
-int i,j;
-int board_w2 = board_width * 2;
-int d_width = (board_width+2)*2;
-
-void display_callback() {
-  system("cls");
-
-  for(i=0; i<y_offset; i++) cout << endl;
-  cout << string(x_offset, ' ');
-  cout << string(d_width, '_') << endl;;
-
-  for(i=0; i<board_height; i++) {
-    cout << string(x_offset, ' ');
-    cout << "<|";
-
-    for(j=0; j<board_width; j++) {
-      switch(board[i][j]) {
-      case true:
-        cout << "[]";
-      default:
-        cout << "..";
-      }
-    }
-    cout << "|>" << endl;
-  }
-  cout << string(x_offset, ' ');
-  cout << string(d_width,'~') << endl;
+int getShapeType(int type, int rot, int x, int y) {
+  return shapes[type][rot][x][y];
 }
 
-void update() {
-  if(to_update) {
-    display_callback();
-    to_update = false;
-  }
+int getShapeIntitialRow(int type, int rot) {
+  return shapeOffsets[type][rot][0];
+}
+
+int getShapeInitialCol(int type, int rot) {
+  return shapeOffsets[type][rot][1];
 }
 
 bool isGameOver() {
@@ -326,6 +302,53 @@ void deleteFilledRows() {
 
 bool isBlockFree(int x, int y) {
   return (board[x][y]==0);
+}
+
+// Pre-req: check that shape will fit in the area
+void storeAt(int x, int y, int type, int rot) {
+  for(int r1=x, r2=0; r1<x+shape_blocks; r1++, r2++) {
+    for(int c1=y, c2=0; c1<y+shape_blocks; c1++, c2++) {
+      if(shapes[type][rot][r2][c2]!=0)
+        board[r1][c1] = true;
+    }
+  }
+}
+
+// Intialize variables globally since they are always reused
+int i, j;
+int board_w2 = board_width * 2;
+int d_width = (board_width + 2) * 2;
+
+void display_callback() {
+  system("cls");
+
+  for (i = 0; i<y_offset; i++) cout << endl;
+  cout << string(x_offset, ' ');
+  cout << string(d_width, '_') << endl;;
+
+  for (i = 0; i<board_height; i++) {
+    cout << string(x_offset, ' ');
+    cout << "<|";
+
+    for (j = 0; j<board_width; j++) {
+      switch (board[i][j]) {
+      case true:
+        cout << "[]";
+      default:
+        cout << "..";
+      }
+    }
+    cout << "|>" << endl;
+  }
+  cout << string(x_offset, ' ');
+  cout << string(d_width, '~') << endl;
+}
+
+void update() {
+  if (to_update) {
+    display_callback();
+    to_update = false;
+  }
 }
 
 int main(int argc, char** argv) {
