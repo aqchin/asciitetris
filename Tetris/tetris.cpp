@@ -261,10 +261,6 @@ struct Shape {
   int x, y;
 };
 
-int getShapeType(int type, int rot, int x, int y) {
-  return shapes[type][rot][x][y];
-}
-
 int getShapeIntitialRow(int type, int rot) {
   return shapeOffsets[type][rot][0];
 }
@@ -314,6 +310,22 @@ void storeAt(int x, int y, int type, int rot) {
   }
 }
 
+bool isValidMove(int x, int y, int type, int rot) {
+  for (int r1=x, r2=0; r1<x + shape_blocks; r1++, r2++) {
+    for (int c1=y, c2=0; c1<y + shape_blocks; c1++, c2++) {
+      if(r1<0 || r1 > board_width-1 || c1 > board_height-1) {
+        if(shapes[type][rot][x][y]!=0)
+          return false;
+      }
+      if(c1>=0) {
+        if(shapes[type][rot][x][y]!=0 && !(isBlockFree(r1, c1)))
+          return false;
+      }
+    }
+  }
+  return true;
+}
+
 // Intialize variables globally since they are always reused
 int i, j;
 int board_w2 = board_width * 2;
@@ -322,16 +334,16 @@ int d_width = (board_width + 2) * 2;
 void display_callback() {
   system("cls");
 
-  for (i = 0; i<y_offset; i++) cout << endl;
+  for (i=0; i<y_offset; i++) cout << endl;
   cout << string(x_offset, ' ');
   cout << string(d_width, '_') << endl;;
 
-  for (i = 0; i<board_height; i++) {
+  for(i=0; i<board_height; i++) {
     cout << string(x_offset, ' ');
     cout << "<|";
 
-    for (j = 0; j<board_width; j++) {
-      switch (board[i][j]) {
+    for(j=0; j<board_width; j++) {
+      switch(board[i][j]) {
       case true:
         cout << "[]";
       default:
