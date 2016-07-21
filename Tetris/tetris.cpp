@@ -19,6 +19,9 @@ static vector<vector<bool>> board(board_height,vector<bool>(board_width,false));
 
 static bool to_update = false;
 
+int curRow, curCol, curType, curRot;
+int nextType, nextRot;
+
 /*
  * Type:
  * 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
@@ -261,7 +264,14 @@ struct Shape {
   int x, y;
 };
 
-int getShapeIntitialRow(int type, int rot) {
+/*
+ *Get random int between m and n
+ */
+int randInt(int m, int n) {
+  return rand() % (n-m+1) + m;
+}
+
+int getShapeInitialRow(int type, int rot) {
   return shapeOffsets[type][rot][0];
 }
 
@@ -300,7 +310,9 @@ bool isBlockFree(int x, int y) {
   return (board[x][y]==0);
 }
 
-// Pre-req: check that shape will fit in the area
+/*
+ * Pre-req: check that shape will fit in the area
+ */
 void storeAt(int x, int y, int type, int rot) {
   for(int r1=x, r2=0; r1<x+shape_blocks; r1++, r2++) {
     for(int c1=y, c2=0; c1<y+shape_blocks; c1++, c2++) {
@@ -331,6 +343,9 @@ int i, j;
 int board_w2 = board_width * 2;
 int d_width = (board_width + 2) * 2;
 
+/*
+ * Draws the scene
+ */
 void display_callback() {
   system("cls");
 
@@ -356,6 +371,16 @@ void display_callback() {
   cout << string(d_width, '~') << endl;
 }
 
+void updateShapes() {
+  curType = nextType;
+  curRot = nextRot;
+  curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
+  curCol = getShapeInitialCol(curType, curRot);
+
+  nextType = randInt(0, 6);
+  nextRot = randInt(0, 3);
+}
+
 void update() {
   if (to_update) {
     display_callback();
@@ -364,6 +389,18 @@ void update() {
 }
 
 int main(int argc, char** argv) {
+
+  srand((unsigned int) time(NULL));
+
+  // Initialize the first piece
+  curType = randInt(0, 6);
+  curRot = randInt(0, 3);
+  curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
+  curCol = getShapeInitialCol(curType, curRot);
+
+  // Initialize the next piece
+  nextType = randInt(0, 6);
+  nextRot = randInt(0, 3);
 
   // Start tetris loop
   display_callback();
