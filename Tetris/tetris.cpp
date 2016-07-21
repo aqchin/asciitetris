@@ -1,3 +1,4 @@
+#include <conio.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
@@ -9,6 +10,11 @@
 #define shape_blocks 5        // NxN of each shape
 #define x_offset 8            // Y offset of the game in the console
 #define y_offset 2            // X offset of the game in the console
+
+#define KEY_UP 72
+#define KEY_DOWN 80
+#define KEY_LEFT 75
+#define KEY_RIGHT 77
 
 using namespace std;
 
@@ -371,6 +377,48 @@ void display_callback() {
   cout << string(d_width, '~') << endl;
 }
 
+/*
+ * Reads Windows key input
+ */
+void keyboard_callback() {
+  switch(_getch()) {
+  case KEY_UP:
+  case 'w':
+  case 'W':
+
+    break;
+  case KEY_DOWN:
+  case 's':
+  case 'S':
+
+    break;
+  case KEY_LEFT:
+  case 'a':
+  case 'A':
+
+    break;
+  case KEY_RIGHT:
+  case 'd':
+  case 'D':
+
+    break;
+  case 'z':
+  case 'Z':
+  case '/':
+  case '?':
+
+    break;
+  case 'x':
+  case 'X':
+  case '.':
+  case '>':
+
+    break;
+  default:
+    break;
+  }
+}
+
 void updateShapes() {
   curType = nextType;
   curRot = nextRot;
@@ -390,7 +438,7 @@ void update() {
 
 int main(int argc, char** argv) {
 
-  srand((unsigned int) time(NULL));
+  srand(time(NULL));
 
   // Initialize the first piece
   curType = randInt(0, 6);
@@ -406,5 +454,6 @@ int main(int argc, char** argv) {
   display_callback();
   while(1) {
     update();
+    keyboard_callback();
   }
 }
