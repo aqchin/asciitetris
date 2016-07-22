@@ -10,6 +10,7 @@
 #define shape_blocks 5        // NxN of each shape
 #define x_offset 8            // Y offset of the game in the console
 #define y_offset 2            // X offset of the game in the console
+#define wait_time 1.f         // Time between shape drops
 
 #define KEY_UP 72
 #define KEY_DOWN 80
@@ -27,6 +28,8 @@ static bool to_update = false;
 
 int curRow, curCol, curType, curRot;
 int nextType, nextRot;
+
+time_t mtime;
 
 /*
  * Type:
@@ -344,7 +347,17 @@ bool isValidMove(int x, int y, int type, int rot) {
   return true;
 }
 
-// Intialize variables globally since they are always reused
+void updateShapes() {
+  curType = nextType;
+  curRot = nextRot;
+  curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
+  curCol = getShapeInitialCol(curType, curRot);
+
+  nextType = randInt(0, 6);
+  nextRot = randInt(0, 3);
+}
+
+// Allocate variables globally since they are always reused
 int i, j;
 int board_w2 = board_width * 2;
 int d_width = (board_width + 2) * 2;
@@ -364,11 +377,15 @@ void display_callback() {
     cout << "<|";
 
     for(j=0; j<board_width; j++) {
-      switch(board[i][j]) {
-      case true:
+      if(i==curRow && j==curCol) {
         cout << "[]";
-      default:
-        cout << "..";
+      } else {
+        switch(board[i][j]) {
+        case true:
+          cout << "[]";
+        default:
+          cout << "..";
+        }
       }
     }
     cout << "|>" << endl;
@@ -382,55 +399,87 @@ void display_callback() {
  */
 void keyboard_callback() {
   switch(_getch()) {
-  case KEY_UP:
-  case 'w':
-  case 'W':
+    case KEY_UP:
+    case 'w':
+    case 'W':
+      break;
 
-    break;
-  case KEY_DOWN:
-  case 's':
-  case 'S':
+    case KEY_DOWN:
+    case 's':
+    case 'S':
+      if(isValidMove(curRow, curCol+1, curType, curRot))
+        curCol++;
+      break;
 
-    break;
-  case KEY_LEFT:
-  case 'a':
-  case 'A':
+    case KEY_LEFT:
+    case 'a':
+    case 'A':
+      if(isValidMove(curRow-1, curCol, curType, curRot))
+        curRow--;
+      break;
 
-    break;
-  case KEY_RIGHT:
-  case 'd':
-  case 'D':
+    case KEY_RIGHT:
+    case 'd':
+    case 'D':
+      if(isValidMove(curRow+1, curCol, curType, curRot))
+        curRow++;
+      break;
 
-    break;
-  case 'z':
-  case 'Z':
-  case '/':
-  case '?':
+    case 'z':
+    case 'Z':
+    case '/':
+    case '?':
+      // Clockwise rotation
+      if(isValidMove(curRow, curCol, curType, (curRot+1)%4))
+        curRot = (curRot+1) %4;
+      break;
 
-    break;
-  case 'x':
-  case 'X':
-  case '.':
-  case '>':
+    case 'x':
+    case 'X':
+    case '.':
+    case '>':
+      // Counter-clockwise rotation
+      if(isValidMove(curRow, curCol, curType, (curRot-1)%4))
+        curRot = (curRot-1) %4;
+      break;
 
-    break;
-  default:
-    break;
+    case ' ':
+      while(isValidMove(curRow, curCol, curType, curRot))
+        curCol++;
+      storeAt(curRow, curCol-1, curType, curRot);
+      deleteFilledRows();
+      
+      if(isGameOver())
+        exit(0);
+
+      updateShapes();
+      break;
+
+    default:
+      break;
   }
 }
 
-void updateShapes() {
-  curType = nextType;
-  curRot = nextRot;
-  curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
-  curCol = getShapeInitialCol(curType, curRot);
-
-  nextType = randInt(0, 6);
-  nextRot = randInt(0, 3);
-}
-
 void update() {
-  if (to_update) {
+
+  time_t cur_time = time(NULL);
+
+  if(difftime(cur_time, mtime) > wait_time) {
+    if(isValidMove(curRow, curCol+1, curType, curRot)) {
+      curCol++;
+      to_update = true;
+    } else {
+      storeAt(curRow, curCol, curType, curRot);
+      deleteFilledRows();
+      if(isGameOver())
+        exit(0);
+    }
+    mtime = cur_time;
+  }
+
+  keyboard_callback();
+
+  if(to_update) {
     display_callback();
     to_update = false;
   }
@@ -450,10 +499,12 @@ int main(int argc, char** argv) {
   nextType = randInt(0, 6);
   nextRot = randInt(0, 3);
 
+  // Initialize time
+  time(&mtime);
+
   // Start tetris loop
   display_callback();
   while(1) {
     update();
-    keyboard_callback();
   }
 }
