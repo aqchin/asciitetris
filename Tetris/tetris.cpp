@@ -5,12 +5,13 @@
 #include <string>
 #include <vector>
 
-#define board_height 20       // Height of the board
-#define board_width 10        // Width of the board
-#define shape_blocks 5        // NxN of each shape
-#define x_offset 8            // Y offset of the game in the console
-#define y_offset 2            // X offset of the game in the console
-#define wait_time 1.f         // Time between shape drops
+#define board_height 20               // Height of the board
+#define board_width 10                // Width of the board
+#define shape_blocks 5                // NxN of each shape
+#define shape_radius shape_blocks/2   // N/2 of each shape
+#define x_offset 8                    // Y offset of the game in console
+#define y_offset 2                    // X offset of the game in console
+#define wait_time 1.f                 // Time between shape drops
 
 #define KEY_UP 72
 #define KEY_DOWN 80
@@ -28,6 +29,8 @@ static bool to_update = false;
 
 int curRow, curCol, curType, curRot;
 int nextType, nextRot;
+
+static int score = 0;
 
 time_t mtime;
 
@@ -311,7 +314,10 @@ void deleteFilledRows() {
       if(board[r][c]==1) break;
       c++;
     }
-    if(c==board_width) deleteRow(r);
+    if(c==board_width) {
+      deleteRow(r);
+      score++;
+    }
   }
 }
 
@@ -347,6 +353,25 @@ bool isValidMove(int x, int y, int type, int rot) {
   return true;
 }
 
+/*
+ * Checks if position on the board is occupied by the current shape
+ * Args: location on the board
+ */
+bool containsCurShape(int x, int y) {
+  int d_x = x - curRow;
+  int d_y = y - curCol;
+
+  // Out of bounds
+  if(d_x>shape_radius || d_x<-shape_radius || 
+     d_y>shape_radius || d_y<-shape_radius)
+    return false;
+
+  if(shapes[curType][curRot][shape_radius+d_x][shape_radius+d_y]>0)
+    return true;
+
+  return false;
+}
+
 void updateShapes() {
   curType = nextType;
   curRot = nextRot;
@@ -360,7 +385,7 @@ void updateShapes() {
 // Allocate variables globally since they are always reused
 int i, j;
 int board_w2 = board_width * 2;
-int d_width = (board_width + 2) * 2;
+int d_width = (board_width+2) * 2;
 
 /*
  * Draws the scene
@@ -368,7 +393,9 @@ int d_width = (board_width + 2) * 2;
 void display_callback() {
   system("cls");
 
-  for (i=0; i<y_offset; i++) cout << endl;
+  for (i=0; i<y_offset; i++)
+    cout << endl;
+
   cout << string(x_offset, ' ');
   cout << string(d_width, '_') << endl;;
 
@@ -378,13 +405,21 @@ void display_callback() {
 
     for(j=0; j<board_width; j++) {
       if(i==curRow && j==curCol) {
-        cout << "[]";
+        cout << "()"; // Draw a pivot point
+
+      } else if(containsCurShape(i, j)) {
+        cout << "[]"; // Draw part of the shape
+
       } else {
         switch(board[i][j]) {
         case true:
-          cout << "[]";
+          cout << "[]"; // Draw a filled unit
+          break;
+
         default:
-          cout << "..";
+          //cout << ".."; // Draw an empty unit
+          cout << i%10 << j%10;
+          break;
         }
       }
     }
@@ -392,6 +427,8 @@ void display_callback() {
   }
   cout << string(x_offset, ' ');
   cout << string(d_width, '~') << endl;
+
+  to_update = false;
 }
 
 /*
@@ -407,22 +444,28 @@ void keyboard_callback() {
     case KEY_DOWN:
     case 's':
     case 'S':
-      if(isValidMove(curRow, curCol+1, curType, curRot))
+      if(isValidMove(curRow, curCol+1, curType, curRot)) {
         curCol++;
+        to_update = true;
+      }
       break;
 
     case KEY_LEFT:
     case 'a':
     case 'A':
-      if(isValidMove(curRow-1, curCol, curType, curRot))
+      if(isValidMove(curRow-1, curCol, curType, curRot)) {
         curRow--;
+        to_update = true;
+      }
       break;
 
     case KEY_RIGHT:
     case 'd':
     case 'D':
-      if(isValidMove(curRow+1, curCol, curType, curRot))
+      if(isValidMove(curRow+1, curCol, curType, curRot)) {
         curRow++;
+        to_update = true;
+      }
       break;
 
     case 'z':
@@ -430,8 +473,10 @@ void keyboard_callback() {
     case '/':
     case '?':
       // Clockwise rotation
-      if(isValidMove(curRow, curCol, curType, (curRot+1)%4))
+      if(isValidMove(curRow, curCol, curType, (curRot+1)%4)) {
         curRot = (curRot+1) %4;
+        to_update = true;
+      }
       break;
 
     case 'x':
@@ -439,8 +484,10 @@ void keyboard_callback() {
     case '.':
     case '>':
       // Counter-clockwise rotation
-      if(isValidMove(curRow, curCol, curType, (curRot-1)%4))
+      if(isValidMove(curRow, curCol, curType, (curRot-1)%4)) {
         curRot = (curRot-1) %4;
+        to_update = true;
+      }
       break;
 
     case ' ':
@@ -453,6 +500,7 @@ void keyboard_callback() {
         exit(0);
 
       updateShapes();
+      to_update = true;
       break;
 
     default:
@@ -461,28 +509,30 @@ void keyboard_callback() {
 }
 
 void update() {
+  cout << curType << " " << curRot << " " << curRow << " " << curCol << endl;
 
   time_t cur_time = time(NULL);
 
   if(difftime(cur_time, mtime) > wait_time) {
-    if(isValidMove(curRow, curCol+1, curType, curRot)) {
+    cout << "time" << endl;
+    if(isValidMove(curRow, curCol+1, curType, curRot))
       curCol++;
-      to_update = true;
-    } else {
+
+    else {
       storeAt(curRow, curCol, curType, curRot);
       deleteFilledRows();
+
       if(isGameOver())
         exit(0);
     }
     mtime = cur_time;
+    to_update = true;
   }
 
   keyboard_callback();
 
-  if(to_update) {
+  if(to_update)
     display_callback();
-    to_update = false;
-  }
 }
 
 int main(int argc, char** argv) {
@@ -495,6 +545,7 @@ int main(int argc, char** argv) {
   curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
   curCol = getShapeInitialCol(curType, curRot);
 
+
   // Initialize the next piece
   nextType = randInt(0, 6);
   nextRot = randInt(0, 3);
@@ -504,7 +555,7 @@ int main(int argc, char** argv) {
 
   // Start tetris loop
   display_callback();
-  while(1) {
+
+  while(true)
     update();
-  }
 }
