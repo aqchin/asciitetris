@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <Windows.h>
@@ -33,6 +34,7 @@ int curRow, curCol, curType, curRot;
 int nextType, nextRot;
 
 static int score = 0;
+static unordered_map<int, bool> keys;
 
 time_t mtime;
 
@@ -438,85 +440,7 @@ void display_callback() {
  */
 void keyboard_callback() {
 
-  if(KEY_PRESSED & (GetKeyState('s') | GetKeyState(KEY_DOWN))) {
-    if (isValidMove(curRow, curCol + 1, curType, curRot)) {
-      curCol++;
-      to_update = true;
-    }
-  }
-  /*
-  switch(_getch()) {
-    case KEY_UP:
-    case 'w':
-    case 'W':
-      break;
-
-    case KEY_DOWN:
-    case 's':
-    case 'S':
-      if(isValidMove(curRow, curCol+1, curType, curRot)) {
-        curCol++;
-        to_update = true;
-      }
-      break;
-
-    case KEY_LEFT:
-    case 'a':
-    case 'A':
-      if(isValidMove(curRow-1, curCol, curType, curRot)) {
-        curRow--;
-        to_update = true;
-      }
-      break;
-
-    case KEY_RIGHT:
-    case 'd':
-    case 'D':
-      if(isValidMove(curRow+1, curCol, curType, curRot)) {
-        curRow++;
-        to_update = true;
-      }
-      break;
-
-    case 'z':
-    case 'Z':
-    case '/':
-    case '?':
-      // Clockwise rotation
-      if(isValidMove(curRow, curCol, curType, (curRot+1)%4)) {
-        curRot = (curRot+1) %4;
-        to_update = true;
-      }
-      break;
-
-    case 'x':
-    case 'X':
-    case '.':
-    case '>':
-      // Counter-clockwise rotation
-      if(isValidMove(curRow, curCol, curType, (curRot-1)%4)) {
-        curRot = (curRot-1) %4;
-        to_update = true;
-      }
-      break;
-
-    case ' ':
-      while(isValidMove(curRow, curCol, curType, curRot))
-        curCol++;
-      storeAt(curRow, curCol-1, curType, curRot);
-      deleteFilledRows();
-      
-      if(isGameOver())
-        exit(0);
-
-      updateShapes();
-      to_update = true;
-      break;
-
-    default:
-      break;
-  }
-  */
+  
 }
 
 void update() {
@@ -555,13 +479,24 @@ int main(int argc, char** argv) {
   curRow = (board_width/2) + shape_radius + getShapeInitialRow(curType, curRot);
   curCol = shape_radius + getShapeInitialCol(curType, curRot);
 
-
   // Initialize the next piece
   nextType = randInt(0, 6);
   nextRot = randInt(0, 3);
 
   // Initialize time
   time(&mtime);
+
+  // Initialize keyboard
+  keys.insert(pair<int, bool>(KEY_UP, false));
+  keys.insert(pair<int, bool>(KEY_DOWN, false));
+  keys.insert(pair<int, bool>(KEY_LEFT, false));
+  keys.insert(pair<int, bool>(KEY_RIGHT, false));
+  keys.insert(pair<int, bool>('w', false));
+  keys.insert(pair<int, bool>('s', false));
+  keys.insert(pair<int, bool>('a', false));
+  keys.insert(pair<int, bool>('d', false));
+  keys.insert(pair<int, bool>('z', false));
+  keys.insert(pair<int, bool>('/', false));
 
   // Start tetris loop
   display_callback();
