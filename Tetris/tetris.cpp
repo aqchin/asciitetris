@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <Windows.h>
 
 #define board_height 20               // Height of the board
 #define board_width 10                // Width of the board
@@ -17,6 +18,7 @@
 #define KEY_DOWN 80
 #define KEY_LEFT 75
 #define KEY_RIGHT 77
+#define KEY_PRESSED 0x8000
 
 using namespace std;
 
@@ -435,6 +437,14 @@ void display_callback() {
  * Reads Windows key input
  */
 void keyboard_callback() {
+
+  if(KEY_PRESSED & (GetKeyState('s') | GetKeyState(KEY_DOWN))) {
+    if (isValidMove(curRow, curCol + 1, curType, curRot)) {
+      curCol++;
+      to_update = true;
+    }
+  }
+  /*
   switch(_getch()) {
     case KEY_UP:
     case 'w':
@@ -506,17 +516,15 @@ void keyboard_callback() {
     default:
       break;
   }
+  */
 }
 
 void update() {
-  cout << curType << " " << curRot << " " << curRow << " " << curCol << endl;
-
   time_t cur_time = time(NULL);
 
   if(difftime(cur_time, mtime) > wait_time) {
-    cout << "time" << endl;
-    if(isValidMove(curRow, curCol+1, curType, curRot))
-      curCol++;
+    if(isValidMove(curRow+1, curCol, curType, curRot))
+      curRow++;
 
     else {
       storeAt(curRow, curCol, curType, curRot);
@@ -531,8 +539,10 @@ void update() {
 
   keyboard_callback();
 
-  if(to_update)
+  if(to_update) {
     display_callback();
+    cout << curType << " " << curRot << " " << curRow << " " << curCol << endl;
+  }
 }
 
 int main(int argc, char** argv) {
@@ -542,8 +552,8 @@ int main(int argc, char** argv) {
   // Initialize the first piece
   curType = randInt(0, 6);
   curRot = randInt(0, 3);
-  curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
-  curCol = getShapeInitialCol(curType, curRot);
+  curRow = (board_width/2) + shape_radius + getShapeInitialRow(curType, curRot);
+  curCol = shape_radius + getShapeInitialCol(curType, curRot);
 
 
   // Initialize the next piece
