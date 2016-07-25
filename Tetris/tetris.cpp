@@ -285,11 +285,11 @@ int randInt(int m, int n) {
   return rand() % (n-m+1) + m;
 }
 
-int getShapeInitialRow(int type, int rot) {
+int getShapeInitialY(int type, int rot) {
   return shapeOffsets[type][rot][0];
 }
 
-int getShapeInitialCol(int type, int rot) {
+int getShapeInitialX(int type, int rot) {
   return shapeOffsets[type][rot][1];
 }
 
@@ -393,8 +393,8 @@ bool containsCurShape(int x, int y) {
 void updateShapes() {
   curType = nextType;
   curRot = nextRot;
-  curRow = (board_width/2) + getShapeInitialRow(curType, curRot);
-  curCol = getShapeInitialCol(curType, curRot);
+  curRow = getShapeInitialY(curType, curRot);
+  curCol = (board_width/2) + getShapeInitialX(curType, curRot);
 
   nextType = randInt(0, 6);
   nextRot = randInt(0, 3);
@@ -515,8 +515,8 @@ int main(int argc, char** argv) {
   // Initialize the first piece
   curType = randInt(0, 6);
   curRot = randInt(0, 3);
-  curRow = (board_width/2) + shape_radius + getShapeInitialRow(curType, curRot);
-  curCol = shape_radius + getShapeInitialCol(curType, curRot);
+  curRow = getShapeInitialY(curType, curRot);
+  curCol = (board_width/2) + getShapeInitialX(curType, curRot);
 
   // Initialize the next piece
   nextType = randInt(0, 6);
