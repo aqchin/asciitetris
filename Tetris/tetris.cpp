@@ -2,10 +2,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
-#include <unordered_map>
 #include <string>
 #include <vector>
 #include <Windows.h>
+
+#define DEBUG true
 
 #define board_height 20               // Height of the board
 #define board_width 10                // Width of the board
@@ -15,11 +16,8 @@
 #define y_offset 2                    // X offset of the game in console
 #define wait_time 1.f                 // Time between shape drops
 
-#define KEY_UP 72
-#define KEY_DOWN 80
-#define KEY_LEFT 75
-#define KEY_RIGHT 77
 #define KEY_PRESSED 0x8000
+#define VK_SLASH 191
 
 using namespace std;
 
@@ -34,7 +32,7 @@ int curRow, curCol, curType, curRot;
 int nextType, nextRot;
 
 static int score = 0;
-static unordered_map<int, bool> keys;
+static vector<char> keys;
 
 time_t mtime;
 
@@ -341,20 +339,36 @@ void storeAt(int x, int y, int type, int rot) {
   }
 }
 
-bool isValidMove(int x, int y, int type, int rot) {
-  for (int r1=x, r2=0; r1<x + shape_blocks; r1++, r2++) {
-    for (int c1=y, c2=0; c1<y + shape_blocks; c1++, c2++) {
-      if(r1<0 || r1 > board_width-1 || c1 > board_height-1) {
-        if(shapes[type][rot][x][y]!=0)
+bool isValidMove(int row, int col, int type, int rot) {
+  for(int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
+    for(int c1=col, c2=0; c1<col+shape_blocks; c1++, c2++) {
+      if(r1<0 || r1>=board_height || c1>=board_width) {
+        if(shapes[type][rot][r2][c2])
+          return false;
+      }
+      if(r1>=0) {
+        if(shapes[type][rot][r2][c2]!=0 && !(isBlockFree(r1, c1)))
+          return false;
+      }
+    }
+    return true;
+  }
+
+  /*
+  for (int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
+    for (int c1=col, c2=0; c1<col+shape_blocks; c1++, c2++) {
+      if(r1<0 || r1>=board_height || c1>=board_width) {
+        if(shapes[type][rot][row][col]!=0)
           return false;
       }
       if(c1>=0) {
-        if(shapes[type][rot][x][y]!=0 && !(isBlockFree(r1, c1)))
+        if(shapes[type][rot][row][col]!=0 && !(isBlockFree(r1, c1)))
           return false;
       }
     }
   }
   return true;
+  */
 }
 
 /*
@@ -421,8 +435,8 @@ void display_callback() {
           break;
 
         default:
-          //cout << ".."; // Draw an empty unit
-          cout << i%10 << j%10;
+          cout << ".."; // Draw an empty unit
+          //cout << i%10 << j%10;
           break;
         }
       }
@@ -436,11 +450,36 @@ void display_callback() {
 }
 
 /*
- * Reads Windows key input
+ * Read Windows key input
  */
 void keyboard_callback() {
 
-  
+  if(!to_update) {
+    if(DEBUG)
+      if((GetAsyncKeyState(VK_UP) | GetAsyncKeyState('W')) & KEY_PRESSED) {if(isValidMove(curRow+1, curCol, curType, curRot))
+        if(isValidMove(curRow-1, curCol, curType, curRot))
+          curRow--;
+        to_update = true;
+      } 
+    if((GetAsyncKeyState(VK_DOWN) | GetAsyncKeyState('S')) & KEY_PRESSED) {
+      if(isValidMove(curRow+1, curCol, curType, curRot))
+        curRow++;
+      to_update = true;
+    }
+    if((GetAsyncKeyState(VK_LEFT) | GetAsyncKeyState('A')) & KEY_PRESSED) {
+      if(isValidMove(curRow, curCol-1, curType, curRot))
+        curCol--;
+      to_update = true;
+    }
+    if((GetAsyncKeyState(VK_RIGHT) | GetAsyncKeyState('D')) & KEY_PRESSED) {
+      if(isValidMove(curRow, curCol+1, curType, curRot))
+        curCol++;
+      to_update = true;
+    }
+    if((GetAsyncKeyState('Z') | GetAsyncKeyState(VK_SLASH)) & KEY_PRESSED) {
+      to_update=true;
+    }
+  }
 }
 
 void update() {
@@ -485,18 +524,6 @@ int main(int argc, char** argv) {
 
   // Initialize time
   time(&mtime);
-
-  // Initialize keyboard
-  keys.insert(pair<int, bool>(KEY_UP, false));
-  keys.insert(pair<int, bool>(KEY_DOWN, false));
-  keys.insert(pair<int, bool>(KEY_LEFT, false));
-  keys.insert(pair<int, bool>(KEY_RIGHT, false));
-  keys.insert(pair<int, bool>('w', false));
-  keys.insert(pair<int, bool>('s', false));
-  keys.insert(pair<int, bool>('a', false));
-  keys.insert(pair<int, bool>('d', false));
-  keys.insert(pair<int, bool>('z', false));
-  keys.insert(pair<int, bool>('/', false));
 
   // Start tetris loop
   display_callback();
