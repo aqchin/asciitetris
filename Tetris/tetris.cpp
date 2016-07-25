@@ -7,16 +7,18 @@
 #include <Windows.h>
 
 #define DEBUG true
+#define HIDE_PIVOT false
 
 #define board_height 20               // Height of the board
 #define board_width 10                // Width of the board
 #define shape_blocks 5                // NxN of each shape
 #define shape_radius shape_blocks/2   // N/2 of each shape
 #define x_offset 8                    // Y offset of the game in console
-#define y_offset 2                    // X offset of the game in console
+#define y_offset 4                    // X offset of the game in console
 #define wait_time 1.f                 // Time between shape drops
 
 #define KEY_PRESSED 0x8000
+#define VK_PERIOD 190
 #define VK_SLASH 191
 
 using namespace std;
@@ -285,11 +287,11 @@ int randInt(int m, int n) {
   return rand() % (n-m+1) + m;
 }
 
-int getShapeInitialY(int type, int rot) {
+int getShapeInitialX(int type, int rot) {
   return shapeOffsets[type][rot][0];
 }
 
-int getShapeInitialX(int type, int rot) {
+int getShapeInitialY(int type, int rot) {
   return shapeOffsets[type][rot][1];
 }
 
@@ -323,18 +325,25 @@ void deleteFilledRows() {
   }
 }
 
-bool isBlockFree(int x, int y) {
+inline bool isBlockFree(int x, int y) {
+  if(x<0) 
+    return true;
   return (board[x][y]==0);
+}
+
+inline void setBoard(int x, int y, bool b) {
+  if(x>=0 && y>=0 && x<board_height && y<board_width)
+    board[x][y] = b;
 }
 
 /*
  * Pre-req: check that shape will fit in the area
  */
-void storeAt(int x, int y, int type, int rot) {
-  for(int r1=x, r2=0; r1<x+shape_blocks; r1++, r2++) {
-    for(int c1=y, c2=0; c1<y+shape_blocks; c1++, c2++) {
+void storeAt(int row, int col, int type, int rot) {
+  for(int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
+    for(int c1=col, c2=0; c1<col+shape_blocks; c1++, c2++) {
       if(shapes[type][rot][r2][c2]!=0)
-        board[r1][c1] = true;
+        setBoard(r1, c1, true);
     }
   }
 }
@@ -342,66 +351,40 @@ void storeAt(int x, int y, int type, int rot) {
 bool isValidMove(int row, int col, int type, int rot) {
   for(int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
     for(int c1=col, c2=0; c1<col+shape_blocks; c1++, c2++) {
-      if(r1<0 || r1>=board_height || c1>=board_width) {
-        if(shapes[type][rot][r2][c2])
-          return false;
-      }
-      if(r1>=0) {
-        if(shapes[type][rot][r2][c2]!=0 && !(isBlockFree(r1, c1)))
-          return false;
-      }
-    }
-    return true;
-  }
 
-  /*
-  for (int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
-    for (int c1=col, c2=0; c1<col+shape_blocks; c1++, c2++) {
-      if(r1<0 || r1>=board_height || c1>=board_width) {
-        if(shapes[type][rot][row][col]!=0)
+      // Satisfy the condition that the shape does not go OOB
+      if(c1<0 || r1>=board_height || c1>=board_width) {
+        if(shapes[type][rot][r2][c2]!=0)
           return false;
       }
+
+      // Satisfy the condition that the point is not already occupied
       if(c1>=0) {
-        if(shapes[type][rot][row][col]!=0 && !(isBlockFree(r1, c1)))
+        if(shapes[type][rot][r2][c2]!=0 && !(isBlockFree(r1, c1)))
           return false;
       }
     }
   }
   return true;
-  */
 }
 
 /*
  * Checks if position on the board is occupied by the current shape
  * Args: location on the board
  */
-bool containsCurShape(int x, int y) {
+int containsCurShape(int x, int y) {
   int d_x = x - curRow;
   int d_y = y - curCol;
 
   // Out of bounds
-  if(d_x>shape_radius || d_x<-shape_radius || 
-     d_y>shape_radius || d_y<-shape_radius)
-    return false;
+  if(d_x>shape_blocks || d_x<0 || 
+     d_y>shape_blocks || d_y<0)
+    return 0;
 
-  if(shapes[curType][curRot][shape_radius+d_x][shape_radius+d_y]>0)
-    return true;
-
-  return false;
+  return shapes[curType][curRot][d_x][d_y];
 }
 
-void updateShapes() {
-  curType = nextType;
-  curRot = nextRot;
-  curRow = getShapeInitialY(curType, curRot);
-  curCol = (board_width/2) + getShapeInitialX(curType, curRot);
-
-  nextType = randInt(0, 6);
-  nextRot = randInt(0, 3);
-}
-
-// Allocate variables globally since they are always reused
-int i, j;
+// Allocate variables globally since they are always re-used
 int board_w2 = board_width * 2;
 int d_width = (board_width+2) * 2;
 
@@ -411,75 +394,148 @@ int d_width = (board_width+2) * 2;
 void display_callback() {
   system("cls");
 
-  for (i=0; i<y_offset; i++)
+  for(int i=0; i<y_offset; i++)
     cout << endl;
 
-  cout << string(x_offset, ' ');
-  cout << string(d_width, '_') << endl;;
+  cout << string(x_offset+1, ' ');
+  cout << string(d_width-1, '_') << endl;;
 
-  for(i=0; i<board_height; i++) {
+  for(int i=0; i<board_height; i++) {
     cout << string(x_offset, ' ');
-    cout << "<|";
+    cout << ">|l";
 
-    for(j=0; j<board_width; j++) {
-      if(i==curRow && j==curCol) {
-        cout << "()"; // Draw a pivot point
+    for(int j=0; j<board_width; j++) {
+      int c = containsCurShape(i, j);
+      if(c>0) {
+        switch(c) {
+          case 1:
+            cout << "[]"; // Draw part of the shape
+            break;
 
-      } else if(containsCurShape(i, j)) {
-        cout << "[]"; // Draw part of the shape
+          case 2:
+#if HIDE_PIVOT
+              cout << "[]";
+#else
+              cout << "()"; // Draw a pivot point
+#endif
+            break;
+
+          default: // This should never happen
+            break;
+        }
 
       } else {
         switch(board[i][j]) {
-        case true:
-          cout << "[]"; // Draw a filled unit
-          break;
+          case true:
+            cout << "[]"; // Draw a filled unit
+            break;
 
-        default:
-          cout << ".."; // Draw an empty unit
-          //cout << i%10 << j%10;
-          break;
+          default:
+            cout << "_l"; // Draw an empty unit
+            break;
         }
       }
     }
-    cout << "|>" << endl;
+    cout << "|<" << endl;
   }
-  cout << string(x_offset, ' ');
-  cout << string(d_width, '~') << endl;
+  cout << string(x_offset+1, ' ');
+  cout << string(d_width-1, '^') << endl;
 
   to_update = false;
 }
 
-/*
- * Read Windows key input
- */
-void keyboard_callback() {
+#if DEBUG
+bool p_up = false,
+     p_ccw = false;   // anticlockwise
+#endif
 
-  if(!to_update) {
-    if(DEBUG)
-      if((GetAsyncKeyState(VK_UP) | GetAsyncKeyState('W')) & KEY_PRESSED) {if(isValidMove(curRow+1, curCol, curType, curRot))
-        if(isValidMove(curRow-1, curCol, curType, curRot))
-          curRow--;
-        to_update = true;
-      } 
-    if((GetAsyncKeyState(VK_DOWN) | GetAsyncKeyState('S')) & KEY_PRESSED) {
-      if(isValidMove(curRow+1, curCol, curType, curRot))
+bool p_down = false,
+     p_left = false,
+     p_right = false,
+     p_cw = false,    // clockwise
+     p_drop = false;
+/*
+* Read Windows key input
+*/
+void keyboard_callback() {
+#if DEBUG
+  if((GetAsyncKeyState(VK_UP) | GetAsyncKeyState('W')) & KEY_PRESSED) {
+    if(!p_up && isValidMove(curRow-1, curCol, curType, curRot)) {
+      curRow--;
+      mtime = time(NULL);
+      to_update = p_up = true;
+    }
+  } else 
+    p_up = false;
+
+  if((GetAsyncKeyState(VK_PERIOD) | GetAsyncKeyState('X')) & KEY_PRESSED) {
+    if(!p_ccw) {
+      int newRot = (curRot-1) % 4;
+      if(isValidMove(curRow, curCol, curType, newRot))
+        curRot = newRot;
+      to_update = p_ccw = true;
+    }
+  } else
+    p_ccw = false;
+#endif
+
+  if((GetAsyncKeyState(VK_DOWN) | GetAsyncKeyState('S')) & KEY_PRESSED) {
+    if(!p_down && isValidMove(curRow+1, curCol, curType, curRot)) {
+      curRow++;
+      mtime = time(NULL);
+      to_update = p_down = true;
+    }
+  } else
+    p_down = false;
+
+  if((GetAsyncKeyState(VK_LEFT) | GetAsyncKeyState('A')) & KEY_PRESSED) {
+    if(!p_left && isValidMove(curRow, curCol-1, curType, curRot)) {
+      curCol--;
+      to_update = p_left = true;
+    }
+  } else
+    p_left = false;
+
+  if((GetAsyncKeyState(VK_RIGHT) | GetAsyncKeyState('D')) & KEY_PRESSED) {
+    if(!p_right && isValidMove(curRow, curCol+1, curType, curRot)) {
+      curCol++;
+      to_update = p_right = true;
+    }
+  } else
+    p_right = false;
+
+  if((GetAsyncKeyState(VK_SLASH) | GetAsyncKeyState('Z')) & KEY_PRESSED) {
+    if(!p_cw) {
+      int newRot = (curRot+1) % 4;
+      if(isValidMove(curRow, curCol, curType, newRot))
+        curRot = newRot;
+      to_update = p_cw = true;
+    }
+  } else
+    p_cw = false;
+
+  if(GetAsyncKeyState(VK_SPACE) & KEY_PRESSED) {
+    if(!p_drop) {
+      while(isValidMove(curRow, curCol, curType, curRot))
         curRow++;
-      to_update = true;
+
+      storeAt(curRow-1, curCol, curType, curRot);
+      deleteFilledRows();
+
+      to_update = p_drop = true;
     }
-    if((GetAsyncKeyState(VK_LEFT) | GetAsyncKeyState('A')) & KEY_PRESSED) {
-      if(isValidMove(curRow, curCol-1, curType, curRot))
-        curCol--;
-      to_update = true;
-    }
-    if((GetAsyncKeyState(VK_RIGHT) | GetAsyncKeyState('D')) & KEY_PRESSED) {
-      if(isValidMove(curRow, curCol+1, curType, curRot))
-        curCol++;
-      to_update = true;
-    }
-    if((GetAsyncKeyState('Z') | GetAsyncKeyState(VK_SLASH)) & KEY_PRESSED) {
-      to_update=true;
-    }
-  }
+  } else
+    p_drop = false;
+}
+
+void updateShapes() {
+  curType = nextType;
+  curRot = nextRot;
+  curRow = getShapeInitialY(curType, curRot);
+  curCol = (board_width / 2) + getShapeInitialX(curType, curRot);
+
+  nextType = randInt(0, 6);
+  nextRot = randInt(0, 3);
 }
 
 void update() {
@@ -495,16 +551,21 @@ void update() {
 
       if(isGameOver())
         exit(0);
+
+      updateShapes();
     }
     mtime = cur_time;
     to_update = true;
   }
 
-  keyboard_callback();
+  if(!to_update)
+    keyboard_callback();
 
-  if(to_update) {
+  else {
     display_callback();
+#if DEBUG
     cout << curType << " " << curRot << " " << curRow << " " << curCol << endl;
+#endif
   }
 }
 
