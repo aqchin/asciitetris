@@ -6,8 +6,8 @@
 #include <vector>
 #include <Windows.h>
 
-#define DEBUG true
-#define HIDE_PIVOT false
+#define DEBUG false
+#define HIDE_PIVOT true
 
 #define board_height 20               // Height of the board
 #define board_width 10                // Width of the board
@@ -312,14 +312,14 @@ void deleteRow(int r) {
 
 // Could make this more efficient
 void deleteFilledRows() {
-  for(int r=0; r<board_height; r++) {
+  for(int r=board_height-1; r>=0; r--) {
     int c=0;
     while(c<board_width) {
-      if(board[r][c]==1) break;
+      if(board[r][c]==0) break;
       c++;
     }
     if(c==board_width) {
-      deleteRow(r);
+      deleteRow(r++);
       score++;
     }
   }
@@ -402,7 +402,7 @@ void display_callback() {
 
   for(int i=0; i<board_height; i++) {
     cout << string(x_offset, ' ');
-    cout << ">|l";
+    cout << ">|";
 
     for(int j=0; j<board_width; j++) {
       int c = containsCurShape(i, j);
@@ -431,7 +431,7 @@ void display_callback() {
             break;
 
           default:
-            cout << "_l"; // Draw an empty unit
+            cout << ".."; // Draw an empty unit
             break;
         }
       }
@@ -439,7 +439,7 @@ void display_callback() {
     cout << "|<" << endl;
   }
   cout << string(x_offset+1, ' ');
-  cout << string(d_width-1, '^') << endl;
+  cout << string(d_width-2, '^') << endl;
 
   cout << endl << string(x_offset+1, ' ');
   cout << "SCORE " << score << endl;
