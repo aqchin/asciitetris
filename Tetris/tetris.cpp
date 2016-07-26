@@ -441,6 +441,9 @@ void display_callback() {
   cout << string(x_offset+1, ' ');
   cout << string(d_width-1, '^') << endl;
 
+  cout << endl << string(x_offset+1, ' ');
+  cout << "SCORE " << score << endl;
+
   to_update = false;
 }
 
