@@ -397,12 +397,12 @@ void display_callback() {
   for(int i=0; i<y_offset; i++)
     cout << endl;
 
-  cout << string(x_offset+1, ' ');
-  cout << string(d_width-1, '_') << endl;;
+  cout << string(x_offset, ' ');
+  cout << string(d_width-2, '_') << endl;;
 
   for(int i=0; i<board_height; i++) {
     cout << string(x_offset, ' ');
-    cout << ">|";
+    cout << "|";
 
     for(int j=0; j<board_width; j++) {
       int c = containsCurShape(i, j);
@@ -436,12 +436,12 @@ void display_callback() {
         }
       }
     }
-    cout << "|<" << endl;
+    cout << "|" << endl;
   }
-  cout << string(x_offset+1, ' ');
+  cout << string(x_offset, ' ');
   cout << string(d_width-2, '^') << endl;
 
-  cout << endl << string(x_offset+1, ' ');
+  cout << endl << string(x_offset, ' ');
   cout << "SCORE " << score << endl;
 
   to_update = false;
