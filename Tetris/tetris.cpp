@@ -13,8 +13,8 @@
 #define board_width 10                // Width of the board
 #define shape_blocks 5                // NxN of each shape
 #define shape_radius shape_blocks/2   // N/2 of each shape
-#define x_offset 8                    // Y offset of the game in console
-#define y_offset 4                    // X offset of the game in console
+#define x_offset 8                    // X offset of the game in console
+#define y_offset 3                    // Y offset of the game in console
 #define wait_time 1.f                 // Time between shape drops
 
 #define KEY_PRESSED 0x8000
@@ -447,6 +447,16 @@ void display_callback() {
   to_update = false;
 }
 
+void updateShapes() {
+  curType = nextType;
+  curRot = nextRot;
+  curRow = getShapeInitialY(curType, curRot);
+  curCol = (board_width / 2) + getShapeInitialX(curType, curRot);
+
+  nextType = randInt(0, 6);
+  nextRot = randInt(0, 3);
+}
+
 #if DEBUG
 bool p_up = false,
      p_ccw = false;   // anticlockwise
@@ -462,6 +472,7 @@ bool p_down = false,
 */
 void keyboard_callback() {
 #if DEBUG
+  // DEBUG: Move up
   if((GetAsyncKeyState(VK_UP) | GetAsyncKeyState('W')) & KEY_PRESSED) {
     if(!p_up && isValidMove(curRow-1, curCol, curType, curRot)) {
       curRow--;
@@ -471,6 +482,7 @@ void keyboard_callback() {
   } else 
     p_up = false;
 
+  // DEBUG: Rotate anticlockwise
   if((GetAsyncKeyState(VK_PERIOD) | GetAsyncKeyState('X')) & KEY_PRESSED) {
     if(!p_ccw) {
       int newRot = (curRot-1) % 4;
@@ -482,15 +494,29 @@ void keyboard_callback() {
     p_ccw = false;
 #endif
 
+  // Move down
   if((GetAsyncKeyState(VK_DOWN) | GetAsyncKeyState('S')) & KEY_PRESSED) {
-    if(!p_down && isValidMove(curRow+1, curCol, curType, curRot)) {
-      curRow++;
+    if(!p_down) {
+      if(isValidMove(curRow+1, curCol, curType, curRot)) {
+        curRow++;
+        score++;
+
+      } else {
+        storeAt(curRow, curCol, curType, curRot);
+        deleteFilledRows();
+
+        if (isGameOver())
+          exit(0);
+
+        updateShapes();
+      }
       mtime = time(NULL);
       to_update = p_down = true;
     }
   } else
     p_down = false;
 
+  // Move left
   if((GetAsyncKeyState(VK_LEFT) | GetAsyncKeyState('A')) & KEY_PRESSED) {
     if(!p_left && isValidMove(curRow, curCol-1, curType, curRot)) {
       curCol--;
@@ -499,6 +525,7 @@ void keyboard_callback() {
   } else
     p_left = false;
 
+  // Move right
   if((GetAsyncKeyState(VK_RIGHT) | GetAsyncKeyState('D')) & KEY_PRESSED) {
     if(!p_right && isValidMove(curRow, curCol+1, curType, curRot)) {
       curCol++;
@@ -507,6 +534,7 @@ void keyboard_callback() {
   } else
     p_right = false;
 
+  // Rotate clockwise
   if((GetAsyncKeyState(VK_SLASH) | GetAsyncKeyState('Z')) & KEY_PRESSED) {
     if(!p_cw) {
       int newRot = (curRot+1) % 4;
@@ -517,13 +545,19 @@ void keyboard_callback() {
   } else
     p_cw = false;
 
+  // Drop the shape to the bottom-most space
   if(GetAsyncKeyState(VK_SPACE) & KEY_PRESSED) {
     if(!p_drop) {
-      while(isValidMove(curRow, curCol, curType, curRot))
+      while(isValidMove(curRow+1, curCol, curType, curRot))
         curRow++;
 
-      storeAt(curRow-1, curCol, curType, curRot);
+      storeAt(curRow, curCol, curType, curRot);
       deleteFilledRows();
+
+      if (isGameOver())
+        exit(0);
+
+      updateShapes();
 
       to_update = p_drop = true;
     }
@@ -531,14 +565,11 @@ void keyboard_callback() {
     p_drop = false;
 }
 
-void updateShapes() {
-  curType = nextType;
-  curRot = nextRot;
-  curRow = getShapeInitialY(curType, curRot);
-  curCol = (board_width / 2) + getShapeInitialX(curType, curRot);
-
-  nextType = randInt(0, 6);
-  nextRot = randInt(0, 3);
+inline void resetKeys() {
+#if DEBUG
+  p_up = p_ccw = false;
+#endif
+  p_left = p_right = p_down = p_drop = false;
 }
 
 void update() {
