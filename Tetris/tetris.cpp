@@ -377,8 +377,8 @@ int containsCurShape(int x, int y) {
   int d_y = y - curCol;
 
   // Out of bounds
-  if(d_x>shape_blocks || d_x<0 || 
-     d_y>shape_blocks || d_y<0)
+  if(d_x>shape_blocks-1 || d_x<0 || 
+     d_y>shape_blocks-1 || d_y<0)
     return 0;
 
   return shapes[curType][curRot][d_x][d_y];
