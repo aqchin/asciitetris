@@ -1,13 +1,11 @@
 # asciitetris
 
-Overview
---------
 This is a terminal-based Tetris game.
 The current build has only been tested on a Windows machine and is likely not going to work on other machines due implementation.
 The build is optimizes performance by pre-allocating most of the information to avoid excessive computation like rotations.
 
-Controls
---------
+# Controls
+
 'a' or LEFT_ARROW   --  Move left a column
 
 'd' or RIGHT_ARROW  --  Move right a column
