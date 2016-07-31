@@ -1,8 +1,8 @@
 # asciitetris
 
 This is a terminal-based Tetris game.
-The current build has only been tested on a Windows machine and is likely not going to work on other machines due implementation.
-The build is optimizes performance by pre-allocating most of the information to avoid excessive computation like rotations.
+The current build has only been tested on a Windows machine and is likely not going to work on other machines due to the  implementation reading input with Windows.h.
+The build optimizes performance by pre-allocating most of the information to avoid excessive computation like rotations.
 
 # Controls
 
