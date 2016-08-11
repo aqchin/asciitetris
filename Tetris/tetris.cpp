@@ -1,3 +1,25 @@
+/*
+ * ASCII Tetris
+ * 
+ * Author: Alan Chin
+ * Github: https://github.com/aqchin/asciitetris
+ *
+ * This is a fairly straightforward program.
+ * It is Tetris designed to work in Window's Command Prompt.
+ * The display is handled by drawing characters on the screen.
+ * It should compile on any Windows-based machine.
+ * The scoring system is based on down-presses and rows completed.
+ *
+ * Basic Controls:
+ * 'a' or LEFT_ARROW  -- Move left a column
+ * 'd' or RIGHT_ARROW -- Move right a column
+ * 's' or DOWN_ARROW  -- Move down a row
+ * 'z' or '/'         -- Rotate clockwise
+ * SPACE              -- Drop the shape down as many rows as possible
+ *
+ * Have fun!
+ */
+
 #include <conio.h>
 #include <cstdlib>
 #include <ctime>
@@ -40,6 +62,9 @@ time_t mtime;
 
 /*
  * Shapes and their corresponding rotations stored to save rotation calculation.
+ * This is more efficient in terms of performance since the rotations are stored.
+ * However, in-place rotations could be used instead to save disk space.
+ * For the scale of this project, the difference is negligible.
  *
  * Type:
  * 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
