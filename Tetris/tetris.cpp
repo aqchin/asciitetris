@@ -6,8 +6,8 @@
 #include <vector>
 #include <Windows.h>
 
-#define DEBUG false
-#define HIDE_PIVOT true
+#define DEBUG false                   // Debug toggle
+#define HIDE_PIVOT true               // Display shape pivot
 
 #define board_height 20               // Height of the board
 #define board_width 10                // Width of the board
@@ -24,7 +24,7 @@
 using namespace std;
 
 /*
- * 2D bool vector for the board
+ * 2D bool vector for the board.
  */
 static vector<vector<bool>> board(board_height,vector<bool>(board_width,false));
 
@@ -39,6 +39,8 @@ static vector<char> keys;
 time_t mtime;
 
 /*
+ * Shapes and their corresponding rotations stored to save rotation calculation.
+ *
  * Type:
  * 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
  * 
@@ -232,9 +234,11 @@ static char shapes[7 /*type*/][4 /*orientation*/][5 /*rows*/][5 /*columns*/] {
 };
 
 /*
-* Type:
-* 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
-*/
+ * Translation offsets for the shapes when initialized at the top of the board.
+ *
+ * Type:
+ * 0=Square, 1=Line, 2=L-Shape, 3=Reverse-L, 4=Z-Shape, 5=S-Shape, 6=T-Shape
+ */
 int shapeOffsets[7 /* type */][4 /* orientation */][2 /* translation */] {
   { // Square
     {-2,-3},
@@ -281,20 +285,29 @@ struct Shape {
 };
 
 /*
- *Get random int between m and n
+ * Get random int between m and n.
  */
 int randInt(int m, int n) {
   return rand() % (n-m+1) + m;
 }
 
+/*
+ * Get initial X translation of the shape.
+ */
 int getShapeInitialX(int type, int rot) {
   return shapeOffsets[type][rot][0];
 }
 
+/*
+ * Get initial Y translation of the shape.
+ */
 int getShapeInitialY(int type, int rot) {
   return shapeOffsets[type][rot][1];
 }
 
+/*
+ * Check if a piece has reached the top of the board.
+ */
 bool isGameOver() {
   for(int i=0; i<board_width; i++)
     if(board[0][i]) return true;
@@ -302,6 +315,9 @@ bool isGameOver() {
   return false;
 }
 
+/*
+ * Remove a row and shift above blocks down a row.
+ */
 void deleteRow(int r) {
   for(int i=r; i>0; i--) {
     for(int j=0; j<board_width; j++) {
@@ -310,7 +326,10 @@ void deleteRow(int r) {
   }
 }
 
-// Could make this more efficient
+/*
+ * Remove rows that are filled.
+ * Could be optimized. The deleteRow() call is a little expensive.
+ */
 void deleteFilledRows() {
   for(int r=board_height-1; r>=0; r--) {
     int c=0;
@@ -325,6 +344,9 @@ void deleteFilledRows() {
   }
 }
 
+/*
+ * Check if a position on the board is available.
+ */
 inline bool isBlockFree(int x, int y) {
   if(x<0) 
     return true;
@@ -337,7 +359,10 @@ inline void setBoard(int x, int y, bool b) {
 }
 
 /*
- * Pre-req: check that shape will fit in the area
+ * Stores the shape at a given location indiscriminately.
+ *
+ * Pre-req: Check that shape will fit in the area.
+ *          Use isValidMove().
  */
 void storeAt(int row, int col, int type, int rot) {
   for(int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
@@ -348,6 +373,9 @@ void storeAt(int row, int col, int type, int rot) {
   }
 }
 
+/*
+ * Check if shape will fit in a given area of the board.
+ */
 bool isValidMove(int row, int col, int type, int rot) {
   for(int r1=row, r2=0; r1<row+shape_blocks; r1++, r2++) {
     for(int c1=col, c2=0; c1<col+shape_blocks; c1++, c2++) {
@@ -369,8 +397,9 @@ bool isValidMove(int row, int col, int type, int rot) {
 }
 
 /*
- * Checks if position on the board is occupied by the current shape
- * Args: location on the board
+ * Checks if position on the board is occupied by the current shape.
+ *
+ * Args: The X and Y coordinates of the shape on the board.
  */
 int containsCurShape(int x, int y) {
   int d_x = x - curRow;
@@ -389,7 +418,7 @@ int board_w2 = board_width * 2;
 int d_width = (board_width+2) * 2;
 
 /*
- * Draws the scene
+ * Draw the scene.
  */
 void display_callback() {
   system("cls");
@@ -447,6 +476,9 @@ void display_callback() {
   to_update = false;
 }
 
+/*
+ * Used for creating the next shape to display.
+ */
 void updateShapes() {
   curType = nextType;
   curRot = nextRot;
@@ -457,18 +489,21 @@ void updateShapes() {
   nextRot = randInt(0, 3);
 }
 
+// Debug controls
 #if DEBUG
 bool p_up = false,
      p_ccw = false;   // anticlockwise
 #endif
 
+// Control keypress checks. This prevents unwanted key spam and finer control in the game.
 bool p_down = false,
      p_left = false,
      p_right = false,
      p_cw = false,    // clockwise
      p_drop = false;
+
 /*
-* Read Windows key input
+* Read Windows key input.
 */
 void keyboard_callback() {
 #if DEBUG
@@ -565,6 +600,9 @@ void keyboard_callback() {
     p_drop = false;
 }
 
+/*
+ * Reset the keypress checks.
+ */
 inline void resetKeys() {
 #if DEBUG
   p_up = p_ccw = false;
@@ -572,6 +610,13 @@ inline void resetKeys() {
   p_left = p_right = p_down = p_drop = false;
 }
 
+/*
+ * Idle callback.
+ *
+ * Updates the interface when:
+ *    - Specified time is met
+ *    - Key is pressed
+ */
 void update() {
   time_t cur_time = time(NULL);
 
@@ -603,6 +648,11 @@ void update() {
   }
 }
 
+/*
+ * Main.
+ *
+ * Intialize first shapes and start loop routine.
+ */
 int main(int argc, char** argv) {
 
   srand(time(NULL));
